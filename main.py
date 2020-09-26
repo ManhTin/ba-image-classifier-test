@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 # use tensorflow for development
 # import tensorflow as tf
-from tflite_runtime.interpreter import tflite
+import tflite_runtime.interpreter as tflite
 
 LABELS = 'model/labels.txt'
 MODEL = 'model/park_mobilenet_v2_100_224_lite.tflite'
@@ -14,7 +14,7 @@ PATCHES_PATH = 'images/patches'
 CLASSES = ['empty', 'occupied']
 
 # use tensorflow interpreter in development
-#interpreter = tf.lite.Interpreter(MODEL)
+# interpreter = tf.lite.Interpreter(MODEL)
 interpreter = tflite.Interpreter(MODEL)
 
 interpreter.allocate_tensors()
@@ -53,29 +53,27 @@ def iterate_files(path, true_label, errors, durations):
 
   for image in image_list:
     img = Image.open(path + '/' + image).resize((224,224))
-    #do sth.
     start_time = time.time()
     predicted_labels = classify_image(interpreter, img)
     elapsed_ms = (time.time() - start_time) * 1000
-    predicted_label_id, prob = predicted_labels[0]
+    predicted_label_id = predicted_labels[0][0]
 
     durations.append(elapsed_ms)
-
-    if predicted_label_id == true_label:
-      errors+=1
+    if predicted_label_id != true_label:
+      errors +=1
 
 def main():
   errors = 0
   durations = []
   # Iterate folders
   for idx, class_name in enumerate(CLASSES):
-    print("Iterating {} folder".format(class_name))
+    print("Iterating {} folder with class id {}".format(class_name, idx))
     path = os.path.join(PATCHES_PATH, class_name)
     iterate_files(path, idx, errors, durations)
 
   accuracy = (1 - (errors / 500)) * 100
   average_latency = np.mean(durations)
-  print(len(durations))
+  print("Performed {} predictions".format(len(durations)))
   print("Accuracy: {}%, average latency: {} ms".format(accuracy, average_latency))
 
 main()
