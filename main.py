@@ -4,20 +4,26 @@ import re
 import numpy as np
 
 from PIL import Image
-import tensorflow as tf
-# from tflite_runtime.interpreter import tflite
+# use tensorflow for development
+# import tensorflow as tf
+from tflite_runtime.interpreter import tflite
 
 LABELS = 'model/labels.txt'
 MODEL = 'model/park_mobilenet_v2_100_224_lite.tflite'
 PATCHES_PATH = 'images/patches'
 CLASSES = ['empty', 'occupied']
 
-interpreter = tf.lite.Interpreter(MODEL)
+# use tensorflow interpreter in development
+#interpreter = tf.lite.Interpreter(MODEL)
+interpreter = tflite.Interpreter(MODEL)
+
 interpreter.allocate_tensors()
 
 def load_labels(path):
   with open(path, 'r') as f:
     return {i: line.strip() for i, line in enumerate(f.readlines())}
+
+labels = load_labels(LABELS)
 
 def set_input_tensor(interpreter, image):
   tensor_index = interpreter.get_input_details()[0]['index']
@@ -41,7 +47,7 @@ def classify_image(interpreter, image, top_k=1):
   return [(i, output[i]) for i in ordered[:top_k]]
 
 # iterate files
-def iterate_files(path, true_label):
+def iterate_files(path, true_label, errors, durations):
   image_list = [f for f in os.listdir(path)
     if re.search(r'([a-zA-Z0-9\s_\\.\-\(\):])+(.jpg|.jpeg|.png)$', f)]
 
@@ -54,28 +60,22 @@ def iterate_files(path, true_label):
     predicted_label_id, prob = predicted_labels[0]
 
     durations.append(elapsed_ms)
-    probabilities.append(prob)
 
     if predicted_label_id == true_label:
       errors+=1
 
 def main():
-  labels = load_labels(LABELS)
-
   errors = 0
   durations = []
-  probabilities = []
-
   # Iterate folders
   for idx, class_name in enumerate(CLASSES):
     print("Iterating {} folder".format(class_name))
     path = os.path.join(PATCHES_PATH, class_name)
-    iterate_files(path, idx)
+    iterate_files(path, idx, errors, durations)
 
   accuracy = (1 - (errors / 500)) * 100
   average_latency = np.mean(durations)
-  average_probability = np.mean(probabilities)
-
-  print("Accuracy: {}%, average latency: {} ms, average probability: {} %".format(accuracy, average_latency, average_probability))
+  print(len(durations))
+  print("Accuracy: {}%, average latency: {} ms".format(accuracy, average_latency))
 
 main()
