@@ -14,9 +14,7 @@ PATCHES_PATH = 'images/patches'
 CLASSES = ['empty', 'occupied']
 
 # use tensorflow interpreter in development
-# interpreter = tf.lite.Interpreter(MODEL)
-interpreter = tflite.Interpreter(MODEL)
-
+# interpreter = tflite.Interpreter(MODEL)
 interpreter.allocate_tensors()
 
 def load_labels(path):
@@ -72,8 +70,9 @@ def main():
     iterate_files(path, idx, errors, durations)
 
   accuracy = (1 - (errors / 500)) * 100
-  average_latency = np.mean(durations)
+  average_latency = round(np.mean(durations), 2)
+  standard_deviation = round(np.std(durations), 2)
   print("Performed {} predictions".format(len(durations)))
-  print("Accuracy: {}%, average latency: {} ms".format(accuracy, average_latency))
+  print("Accuracy: {}%, average latency: {} ms, standard deviation: {} ms".format(accuracy, average_latency, standard_deviation))
 
 main()
