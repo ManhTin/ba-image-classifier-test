@@ -4,17 +4,16 @@ import re
 import numpy as np
 
 from PIL import Image
-# use tensorflow for development
-# import tensorflow as tf
-import tflite_runtime.interpreter as tflite
+# import tensorflow as tf # uncomment for local development
+import tflite_runtime.interpreter as tflite # comment for local development
 
 LABELS = 'model/labels.txt'
 MODEL = 'model/park_mobilenet_v2_100_224_lite.tflite'
 PATCHES_PATH = 'images/patches'
 CLASSES = ['empty', 'occupied']
 
-# use tensorflow interpreter in development
-# interpreter = tflite.Interpreter(MODEL)
+# interpreter = tf.lite.Interpreter(MODEL) # uncomment for local development
+interpreter = tflite.Interpreter(MODEL) # comment for local development
 interpreter.allocate_tensors()
 
 def load_labels(path):
@@ -65,14 +64,17 @@ def main():
   durations = []
   # Iterate folders
   for idx, class_name in enumerate(CLASSES):
-    print("Iterating {} folder with class id {}".format(class_name, idx))
     path = os.path.join(PATCHES_PATH, class_name)
     iterate_files(path, idx, errors, durations)
 
   accuracy = (1 - (errors / 500)) * 100
   average_latency = round(np.mean(durations), 2)
   standard_deviation = round(np.std(durations), 2)
-  print("Performed {} predictions".format(len(durations)))
-  print("Accuracy: {}%, average latency: {} ms, standard deviation: {} ms".format(accuracy, average_latency, standard_deviation))
+  print("Performed {} predictions. Accuracy: {}%, average latency: {} ms, standard deviation: {} ms".format(len(durations), accuracy, average_latency, standard_deviation))
 
-main()
+print('Starting...')
+
+for x in range(1,6):
+  main()
+
+print('Finished.')
