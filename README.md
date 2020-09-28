@@ -1,5 +1,7 @@
 # BA Image Classifier Test
 
+Contains script to run the model created in [Training](https://github.com/ManhTin/ba-image-classifier-training).
+
 ## Dependencies
 
 * Python 3.7.9
