@@ -24,24 +24,26 @@ labels = load_labels(LABELS)
 
 def set_input_tensor(interpreter, image):
   tensor_index = interpreter.get_input_details()[0]['index']
-  input_tensor = interpreter.tensor(tensor_index)()[0]
-  input_tensor[:, :] = image
+  image_tensor = interpreter.tensor(tensor_index)()[0]
+  image_tensor[:, :] = image
 
 # predict class of image
 def classify_image(interpreter, image, top_k=1):
-  """Returns a sorted array of classification results."""
   set_input_tensor(interpreter, image)
   interpreter.invoke()
   output_details = interpreter.get_output_details()[0]
-  output = np.squeeze(interpreter.get_tensor(output_details['index']))
+  output_index = output_details['index']
+  output = np.squeeze(interpreter.get_tensor(output_index))
 
   # If the model is quantized (uint8 data), then dequantize the results
   if output_details['dtype'] == np.uint8:
     scale, zero_point = output_details['quantization']
     output = scale * (output - zero_point)
+    print(output_details['dtype'])
 
   ordered = np.argpartition(-output, top_k)
-  return [(i, output[i]) for i in ordered[:top_k]]
+  ordered_output = [(i, output[i]) for i in ordered[:top_k]]
+  return ordered_output[0]
 
 # iterate files
 def iterate_files(path, true_label, errors, durations):
@@ -53,7 +55,7 @@ def iterate_files(path, true_label, errors, durations):
     start_time = time.time()
     predicted_labels = classify_image(interpreter, img)
     elapsed_ms = (time.time() - start_time) * 1000
-    predicted_label_id = predicted_labels[0][0]
+    predicted_label_id = predicted_labels[0]
 
     durations.append(elapsed_ms)
     if predicted_label_id != true_label:
